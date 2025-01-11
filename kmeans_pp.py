@@ -64,8 +64,9 @@ def kmeans(k, iter, epsilon, file_name_1, file_name_2):
         print("An Error Has Occurred4")
         sys.exit(1)
     else:
+        print(original_centroids_indexes)
         for i, centroid in enumerate(res):
-            print(', '.join(map(str, centroid)))  #ההדפסה 
+            print(','.join(map(str, centroid)))
 
 if __name__ == "__main__":
     try:

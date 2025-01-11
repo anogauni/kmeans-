@@ -56,16 +56,20 @@ void cleanupVectorsList(struct vector *head){
     }
 }
 
-void cleanupArrayOfVectors(struct vector *centers, int k) {
-    for (int i = 0; i < k; i++) {
-        struct cord *curr_cord = centers[i].cords;
-        while (curr_cord) {
-            struct cord *temp = curr_cord;
-            curr_cord = curr_cord->next;
-            free(temp);
+void cleanupArrayOfVectors(struct vector *vectors, int k) {
+    struct cord *cord, *temp_cord;
+    int i;
+    for (i = 0; i < k; i++)
+    {
+        cord = vectors[i].cords;
+        while (cord)
+        {
+            temp_cord = cord;
+            cord = cord->next;
+            free(temp_cord);
         }
+        vectors[i].cords = NULL;
     }
-    free(centers);
 }
 
 void printCenters(struct vector *centers, int k) {
@@ -81,6 +85,7 @@ void printCenters(struct vector *centers, int k) {
             printf("  %f ", curr_cord->value);
             curr_cord = curr_cord->next;
         }
+        printf("\n");
     }
 }
 
@@ -108,7 +113,7 @@ void printData(struct vector *data_vec, int numPoints) {
 }
 
 void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
-    printf("Reading data now...\n");
+    // printf("Reading data now...\n");
     struct vector *head_vec, *curr_vec;
     struct cord *head_cord, *curr_cord;
     int count = 0;
@@ -190,7 +195,7 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
             }
         }
     }
-    printf("%d\n",count);
+    // printf("%d\n",count);
     *data_vec = head_vec;
 
 }
@@ -201,15 +206,14 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
     int index = 0, vectorCount = 0;
     struct cord *curr_cord = NULL, *head_cord = NULL;
 
-    printf("Reading centers now...\n");
+    // printf("Reading centers now...\n");
 
     // Allocate memory for the array of vectors
     struct vector *centers = malloc(sizeof(struct vector) * k);
     if (!centers) {
-        printf("An Error Has Occurred\n");
+        printf("An Error Has Occurred1\n");
         return NULL;
     }
-
     // Initialize each vector in the array
     for (i = 0; i < k; i++) {
         initialize_vector(&centers[i]);
@@ -226,7 +230,7 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
         // Initialize cords for the current vector
         head_cord = malloc(sizeof(struct cord));
         if (!head_cord) {
-            printf("An Error Has Occurred\n");
+            printf("An Error Has Occurred2\n");
             cleanupArrayOfVectors(centers, k);
             return NULL;
         }
@@ -238,7 +242,7 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
             if (centersStr[index] == ',') {
                 curr_cord->next = malloc(sizeof(struct cord));
                 if (!curr_cord->next) {
-                    printf("An Error Has Occurred\n");
+                    printf("An Error Has Occurred3\n");
                     cleanupArrayOfVectors(centers, k);
                     return NULL;
                 }
@@ -267,7 +271,7 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
         cleanupArrayOfVectors(centers, k);
         return NULL;
     }
-
+    // printf("Finished reading centers\n");
     return centers;
 }
 
@@ -305,7 +309,7 @@ double calculateDistance(struct vector *point1, struct vector *point2, int d)
 }
 
 /*Method that calculates convergence and returns 0 iff changes are under epsilon - > if 1 then we should continute iterating */
-int calculateConvergence(struct vector old_centroids[], struct vector new_centroids[], int k)
+int calculateConvergence(struct vector old_centroids[], struct vector new_centroids[], int k, double epsilon)
 {
     struct vector *old_v;
     struct vector *new_v;
@@ -458,16 +462,16 @@ struct vector *centroidIteration(int k, int d, struct vector oldcentroid[], stru
     {
         if (!current_point || !current_point->cords)
         {
-            cleanupVectors(new_list, k);
+            cleanupArrayOfVectors(new_list, k);
             free(counts);
-            free(new_list);
+            free(new_list); //noga
             return NULL;
         }
 
         index_centroid = calculateClosestCluster(oldcentroid, current_point, k, d);
         if (index_centroid < 0 || index_centroid >= k)
         {
-            cleanupVectors(new_list, k);
+            cleanupArrayOfVectors(new_list, k);
             free(counts);
             free(new_list);
             return NULL;
@@ -504,10 +508,6 @@ struct vector *centroidIteration(int k, int d, struct vector oldcentroid[], stru
     free(counts);
     return new_list;
 }
-
-
-
-
 
 
 static PyObject *fit(PyObject *self, PyObject *args){
@@ -555,7 +555,7 @@ static PyObject *fit(PyObject *self, PyObject *args){
             cleanupVectorsList(data_vec);
             return NULL;
         }
-        if (calculateConvergence(centers, new_centroids, k))
+        if (calculateConvergence(centers, new_centroids, k, epsilon))
         {
             cleanupArrayOfVectors(centers, k);
             free(centers);
@@ -566,6 +566,11 @@ static PyObject *fit(PyObject *self, PyObject *args){
         centers = new_centroids;
         iteration++;
     }
+
+    // printf("finished iterations\n");
+    // printCenters(new_centroids, k);
+
+    // Finished iterations and preparing PyObject
 
     py_res = PyList_New((Py_ssize_t)k);
     if (py_res == NULL) {
@@ -591,7 +596,7 @@ static PyObject *fit(PyObject *self, PyObject *args){
                 printf("An Error Has Occurred\n");
                 cleanupArrayOfVectors(new_centroids, k);
                 free(new_centroids);
-                cleanupVectorsList(head_vec);
+                cleanupVectorsList(data_vec);
                 return NULL;
             }
 //here we stopped
@@ -601,7 +606,7 @@ static PyObject *fit(PyObject *self, PyObject *args){
                 printf("An Error Has Occurred\n"); 
                 cleanupArrayOfVectors(new_centroids, k);
                 free(new_centroids);
-                cleanupVectorsList(centroids);
+                cleanupVectorsList(data_vec);
                 return NULL;
             }
             Py_XDECREF(py_cord);
@@ -612,27 +617,13 @@ static PyObject *fit(PyObject *self, PyObject *args){
         PyList_SetItem(py_res, i, py_res_i);
     }
 
-    //noga:
-/*
-    cleanupVectorsList(head_vec); //maybe to clean more thing
     cleanupArrayOfVectors(new_centroids, k);
     free(new_centroids);
-    cleanupVectorsList(centroids);*/
-    
-    cleanupVectorsList(data_vec);  // Proper cleanup
-    cleanupArrayOfVectors(new_centroids, k);  // Cleanup centroids
-    free(new_centroids);
+    cleanupVectorsList(data_vec);
 
+    // printf("Finished C... returning NULL\n");
     return py_res;
 }
-    
-
-
-
-/* This builds the answer ("d" = Convert a C double to a Python floating point number) back into a python object */
-    // return Py_BuildValue("d", epsilon); /*  Py_BuildValue(...) returns a PyObject*  */
-}
-
 
 static PyMethodDef mykmeanssp_methods[] = {
     {"fit",                   /* the Python method name that will be used */
