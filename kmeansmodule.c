@@ -71,24 +71,26 @@ void cleanupArrayOfVectors(struct vector *vectors, int k) {
         vectors[i].cords = NULL;
     }
 }
+/*
+// void printCenters(struct vector *centers, int k) {
+//     if (!centers) {
+//         printf("Error: No centers available.\n");
+//         return;
+//     }
 
-void printCenters(struct vector *centers, int k) {
-    if (!centers) {
-        printf("Error: No centers available.\n");
-        return;
-    }
+//     for (int i = 0; i < k; i++) {
+//         printf("Vector %d:\n", i + 1);
+//         struct cord *curr_cord = centers[i].cords;
+//         while (curr_cord) {
+//             printf("  %f ", curr_cord->value);
+//             curr_cord = curr_cord->next;
+//         }
+//         printf("\n");
+//     }
+// }
+*/
 
-    for (int i = 0; i < k; i++) {
-        printf("Vector %d:\n", i + 1);
-        struct cord *curr_cord = centers[i].cords;
-        while (curr_cord) {
-            printf("  %f ", curr_cord->value);
-            curr_cord = curr_cord->next;
-        }
-        printf("\n");
-    }
-}
-
+/*
 void printData(struct vector *data_vec, int numPoints) {
     printf("Printing data from C...\n");
     struct vector *curr_vec = data_vec;
@@ -111,25 +113,24 @@ void printData(struct vector *data_vec, int numPoints) {
         point_count++;
     }
 }
+*/
 
 void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
-    // printf("Reading data now...\n");
     struct vector *head_vec, *curr_vec;
     struct cord *head_cord, *curr_cord;
     int count = 0;
-    struct cord *original_head_cord = NULL;
+    // struct cord *original_head_cord = NULL;
     
 
     int index = 0;
     head_cord = malloc(sizeof(struct cord));
     if (!head_cord)
     {
-        printf("An Error Has Occurred\n");
         return;
     }
     initialize_cord(head_cord);
     curr_cord = head_cord;
-    original_head_cord = head_cord;
+    // original_head_cord = head_cord;
 
     head_vec = malloc(sizeof(struct vector));
     if (!head_vec)
@@ -137,7 +138,6 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
 
         free(head_cord);
         cleanupVectorsList(head_vec);
-        printf("An Error Has Occurred\n");
         return;
     }
     initialize_vector(head_vec);
@@ -153,7 +153,6 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
             {
                 free(head_cord);
                 cleanupVectorsList(head_vec);
-                printf("An Error Has Occurred\n");
                 return;
             }
             initialize_cord(curr_cord->next);
@@ -169,7 +168,6 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
             {
                 free(head_cord);
                 cleanupVectorsList(head_vec);
-                printf("An Error Has Occurred\n");
                 return;
             }
             initialize_vector(curr_vec->next);
@@ -179,7 +177,6 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
             if (!head_cord)
             {
                 cleanupVectorsList(head_vec);
-                printf("An Error Has Occurred\n");
                 return;
             }
             initialize_cord(head_cord);
@@ -195,7 +192,6 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
             }
         }
     }
-    // printf("%d\n",count);
     *data_vec = head_vec;
 
 }
@@ -211,7 +207,6 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
     // Allocate memory for the array of vectors
     struct vector *centers = malloc(sizeof(struct vector) * k);
     if (!centers) {
-        printf("An Error Has Occurred1\n");
         return NULL;
     }
     // Initialize each vector in the array
@@ -222,7 +217,6 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
 
     while (centersStr[index] != '\0') {
         if (vectorCount >= k) {
-            printf("Error: More vectors than expected (k = %d).\n", k);
             cleanupArrayOfVectors(centers, k); // Free allocated memory
             return NULL;
         }
@@ -230,7 +224,6 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
         // Initialize cords for the current vector
         head_cord = malloc(sizeof(struct cord));
         if (!head_cord) {
-            printf("An Error Has Occurred2\n");
             cleanupArrayOfVectors(centers, k);
             return NULL;
         }
@@ -242,7 +235,6 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
             if (centersStr[index] == ',') {
                 curr_cord->next = malloc(sizeof(struct cord));
                 if (!curr_cord->next) {
-                    printf("An Error Has Occurred3\n");
                     cleanupArrayOfVectors(centers, k);
                     return NULL;
                 }
@@ -464,7 +456,7 @@ struct vector *centroidIteration(int k, int d, struct vector oldcentroid[], stru
         {
             cleanupArrayOfVectors(new_list, k);
             free(counts);
-            free(new_list); //noga
+            free(new_list);
             return NULL;
         }
 
@@ -517,7 +509,6 @@ static PyObject *fit(PyObject *self, PyObject *args){
     struct vector *data_vec = NULL;
     struct vector *centers = NULL;
     struct vector *new_centroids = NULL;
-    //noga:
     PyObject *py_res;
     int i;
     struct cord *curr_cord;
@@ -534,19 +525,18 @@ static PyObject *fit(PyObject *self, PyObject *args){
     readDataToLinkedList(dataStr, &data_vec);
     if (data_vec == NULL)
     {
-        printf("problem with data vec after reading\n");
         return NULL;
     }
     centers = readCentersToArray(centersStr, k);
     if (centers == NULL)
     {
-        printf("An Error Has Occurred\n");
         cleanupVectorsList(data_vec);
         return NULL;
     }
 
     iteration = 0;
     while (iteration < iter){
+        /*printf("iteration %d\n", iteration);*/
         new_centroids = centroidIteration(k, numCoords, centers, data_vec, numPoints);
         if (!new_centroids)
         {
@@ -557,6 +547,7 @@ static PyObject *fit(PyObject *self, PyObject *args){
         }
         if (calculateConvergence(centers, new_centroids, k, epsilon))
         {
+            /* printf("Converged in iteration %d\n", iteration); */
             cleanupArrayOfVectors(centers, k);
             free(centers);
             break;
@@ -567,14 +558,10 @@ static PyObject *fit(PyObject *self, PyObject *args){
         iteration++;
     }
 
-    // printf("finished iterations\n");
-    // printCenters(new_centroids, k);
-
-    // Finished iterations and preparing PyObject
+    /* Finished iterations and preparing PyObject */
 
     py_res = PyList_New((Py_ssize_t)k);
     if (py_res == NULL) {
-        printf("An Error Has Occurred\n");
         cleanupArrayOfVectors(new_centroids, k);
         free(new_centroids);
         cleanupVectorsList(data_vec);
@@ -583,7 +570,6 @@ static PyObject *fit(PyObject *self, PyObject *args){
     for (i = 0; i < k; i++) {
         PyObject *py_res_i = PyList_New(0);
         if (py_res_i == NULL) {
-            printf("An Error Has Occurred\n");
             cleanupArrayOfVectors(new_centroids, k);
             free(new_centroids);
             cleanupVectorsList(data_vec);
@@ -593,17 +579,14 @@ static PyObject *fit(PyObject *self, PyObject *args){
         while (curr_cord != NULL) {
             PyObject *py_cord = PyFloat_FromDouble(curr_cord->value);
             if (py_cord == NULL) {
-                printf("An Error Has Occurred\n");
                 cleanupArrayOfVectors(new_centroids, k);
                 free(new_centroids);
                 cleanupVectorsList(data_vec);
                 return NULL;
             }
-//here we stopped
-            // Append cord value to the current vector's Python list
+            
             if (PyList_Append(py_res_i, py_cord) < 0) {
                 Py_XDECREF(py_cord);
-                printf("An Error Has Occurred\n"); 
                 cleanupArrayOfVectors(new_centroids, k);
                 free(new_centroids);
                 cleanupVectorsList(data_vec);
@@ -613,7 +596,6 @@ static PyObject *fit(PyObject *self, PyObject *args){
             curr_cord = curr_cord->next;
         }
 
-        // Set the vector in the result list
         PyList_SetItem(py_res, i, py_res_i);
     }
 
@@ -621,7 +603,6 @@ static PyObject *fit(PyObject *self, PyObject *args){
     free(new_centroids);
     cleanupVectorsList(data_vec);
 
-    // printf("Finished C... returning NULL\n");
     return py_res;
 }
 

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import sys, math
+import sys
 import mykmeanssp
 
 def validateIter(iter):
@@ -31,7 +31,6 @@ def kmeans(k, iter, epsilon, file_name_1, file_name_2):
     file2 = pd.read_csv(file_name_2, header=None).sort_values(by=0)
     dataFrame = pd.merge(file1, file2, how='inner', on=0, suffixes=('_file1', '_file2'))
     data = np.delete(dataFrame.to_numpy(), 0, axis=1)
-    # data = dataFrame.to_numpy()
     num_points, num_coords = data.shape
     
     if k >= num_points or k <= 1:
@@ -45,33 +44,34 @@ def kmeans(k, iter, epsilon, file_name_1, file_name_2):
     np.random.seed(1234)
 
     random_index = np.random.choice(num_points)
-    original_centroids_indexes[0] = random_index
+    original_centroids_indexes[0] = int(random_index)
     centers[0] = np.copy(data[random_index])
 
     for i in range(1, k):
         distances = np.array([min([np.linalg.norm(center_point - data_point) for center_point in centers[:i]]) for data_point in data])
         probs = distances / distances.sum()
         random_index = np.random.choice(num_points, p=probs)
-        original_centroids_indexes[i] = random_index
+        original_centroids_indexes[i] = int(random_index)
         centers[i] = np.copy(data[random_index])
 
     centersStr = '\n'.join([', '.join(map(str, row)) for row in centers])
     dataStr = '\n'.join([', '.join(map(str, row)) for row in data]) + '\n'
 
-    # k, iter, epsilon, dataStr, centersStr
-    res = mykmeanssp.fit(k, iter, num_points, num_coords, epsilon, dataStr, centersStr) #noga
+    res = mykmeanssp.fit(k, iter, num_points, num_coords, epsilon, dataStr, centersStr)
+    
     if (res == None):
-        print("An Error Has Occurred4")
+        print("An Error Has Occurred")
         sys.exit(1)
     else:
-        print(original_centroids_indexes)
+        print(','.join(map(str, map(int, original_centroids_indexes))))
         for i, centroid in enumerate(res):
-            print(','.join(map(str, centroid)))
+            line = ",".join("{:.4f}".format(coordinate) for coordinate in centroid)
+            print(line)
 
 if __name__ == "__main__":
     try:
         if len(sys.argv) < 5:  # check if there are at least 4 args (k, eps, file_name_1, file_name_2) - iter is optional 
-            print("An Error Has Occurred0")
+            print("An Error Has Occurred")
             sys.exit(1)  
         try:
             k = sys.argv[1]  # number of clusters
@@ -81,23 +81,20 @@ if __name__ == "__main__":
             else:
                 k = int(k)
             # check if iterations is provided
-            # print(k)
             if len(sys.argv) == 6:
                 iter = sys.argv[2]  # read iterations if provided 
                 epsilon = sys.argv[3]
                 file_name_1 = sys.argv[4]
                 file_name_2 = sys.argv[5]   
-                # print(iter, epsilon, file_name_1, file_name_2)
             elif len(sys.argv) == 5:  
                 iter = 300  # default value for iterations
                 epsilon = sys.argv[2]
                 file_name_1 = sys.argv[3]
                 file_name_2 = sys.argv[4]
             else:
-                print("An Error Has Occurred1")
+                print("An Error Has Occurred")
                 sys.exit(1)
             epsilon = float(epsilon)
-            # print(epsilon)
             if epsilon < 0:
                 print("Invalid epsilon!")
                 sys.exit(1)
@@ -108,13 +105,12 @@ if __name__ == "__main__":
                 iter = int(iter)
 
         except ValueError:
-            # print("Error: <clusters> and <iterations> must be integers.")
-            print("An Error Has Occurred2")
+            print("An Error Has Occurred")
             sys.exit(1)
         
         # Call kmeans method and print result
         kmeans(k, iter, epsilon, file_name_1, file_name_2)
 
     except Exception as e:
-        print("An Error Has Occurred3")
+        print("An Error Has Occurred")
         sys.exit(1)
