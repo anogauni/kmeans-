@@ -60,6 +60,7 @@ void cleanupVectorsList(struct vector *head){
 void cleanupArrayOfVectors(struct vector *vectors, int k) {
     struct cord *cord, *temp_cord;
     int i;
+
     for (i = 0; i < k; i++)
     {
         cord = vectors[i].cords;
@@ -72,58 +73,14 @@ void cleanupArrayOfVectors(struct vector *vectors, int k) {
         vectors[i].cords = NULL;
     }
 }
-/*
-// void printCenters(struct vector *centers, int k) {
-//     if (!centers) {
-//         printf("Error: No centers available.\n");
-//         return;
-//     }
 
-//     for (int i = 0; i < k; i++) {
-//         printf("Vector %d:\n", i + 1);
-//         struct cord *curr_cord = centers[i].cords;
-//         while (curr_cord) {
-//             printf("  %f ", curr_cord->value);
-//             curr_cord = curr_cord->next;
-//         }
-//         printf("\n");
-//     }
-// }
-*/
-
-/*
-void printData(struct vector *data_vec, int numPoints) {
-    printf("Printing data from C...\n");
-    struct vector *curr_vec = data_vec;
-    struct cord *curr_cord;
-    int point_count = 0;
-
-    // Traverse the vector linked list
-    while (curr_vec != NULL && point_count < numPoints + 1) {
-        curr_cord = curr_vec->cords;
-
-        // Traverse the cord linked list for each vector
-        while (curr_cord != NULL) {
-            printf("%lf ", curr_cord->value);  // Print the value of each cord
-            curr_cord = curr_cord->next;
-        }
-
-        printf("\n");  // Print a new line after each vector
-
-        curr_vec = curr_vec->next;
-        point_count++;
-    }
-}
-*/
 
 void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
     struct vector *head_vec, *curr_vec;
     struct cord *head_cord, *curr_cord;
     int count = 0;
-    // struct cord *original_head_cord = NULL;
-    
-
     int index = 0;
+
     head_cord = malloc(sizeof(struct cord));
     if (!head_cord)
     {
@@ -131,7 +88,6 @@ void readDataToLinkedList(const char *dataStr, struct vector **data_vec) {
     }
     initialize_cord(head_cord);
     curr_cord = head_cord;
-    // original_head_cord = head_cord;
 
     head_vec = malloc(sizeof(struct vector));
     if (!head_vec)
@@ -203,26 +159,23 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
     int index = 0, vectorCount = 0;
     struct cord *curr_cord = NULL, *head_cord = NULL;
 
-    // printf("Reading centers now...\n");
-
-    // Allocate memory for the array of vectors
     struct vector *centers = malloc(sizeof(struct vector) * k);
     if (!centers) {
         return NULL;
     }
-    // Initialize each vector in the array
+
     for (i = 0; i < k; i++) {
         initialize_vector(&centers[i]);
-        centers[i].next = NULL; // Ensure no linking between vectors
+        centers[i].next = NULL; 
     }
 
     while (centersStr[index] != '\0') {
         if (vectorCount >= k) {
-            cleanupArrayOfVectors(centers, k); // Free allocated memory
+            cleanupArrayOfVectors(centers, k); /*Free allocated memory*/ 
             return NULL;
         }
 
-        // Initialize cords for the current vector
+        /*Initialize cords for the current vector*/
         head_cord = malloc(sizeof(struct cord));
         if (!head_cord) {
             cleanupArrayOfVectors(centers, k);
@@ -231,7 +184,7 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
         initialize_cord(head_cord);
         curr_cord = head_cord;
 
-        // Parse cords for the current vector
+        /* Parse cords for the current vector*/
         while (centersStr[index] != '\0' && centersStr[index] != '\n') {
             if (centersStr[index] == ',') {
                 curr_cord->next = malloc(sizeof(struct cord));
@@ -250,7 +203,7 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
             }
         }
 
-        // Assign the head_cord to the current vector in the array
+        /*Assign the head_cord to the current vector in the array*/
         centers[vectorCount].cords = head_cord;
         vectorCount++;
         if (centersStr[index] == '\n') {
@@ -258,13 +211,11 @@ struct vector *readCentersToArray(const char *centersStr, int k) {
         }
     }
 
-    // Check if fewer vectors were parsed than expected
+    /*Check if fewer vectors were parsed than expected*/
     if (vectorCount < k) {
-        printf("Error: Fewer vectors than expected (k = %d).\n", k);
         cleanupArrayOfVectors(centers, k);
         return NULL;
     }
-    // printf("Finished reading centers\n");
     return centers;
 }
 
@@ -306,8 +257,8 @@ int calculateConvergence(struct vector old_centroids[], struct vector new_centro
 {
     struct vector *old_v;
     struct vector *new_v;
-
     int i;
+
     for (i = 0; i < k; i++)
     {
 
@@ -330,6 +281,7 @@ int calculateClosestCluster(struct vector centroids[], struct vector *point, int
     int min_distance_idx;
     int i;
     double distance;
+
     double *distances = malloc(k * sizeof(double));
     if (!point || !point->cords)
     {
@@ -499,15 +451,12 @@ static PyObject *fit(PyObject *self, PyObject *args){
     int k, iter, numPoints, numCoords, iteration;
     double epsilon;
     const char *dataStr, *centersStr;
-    struct vector *data_vec = NULL;
-    struct vector *centers = NULL;
-    struct vector *new_centroids = NULL;
     PyObject *py_res;
     int i;
     struct cord *curr_cord;
-
-    
-
+    struct vector *data_vec = NULL;
+    struct vector *centers = NULL;
+    struct vector *new_centroids = NULL;
 
     /* This parses the Python arguments*/
     if(!PyArg_ParseTuple(args, "iiiidss", &k, &iter, &numPoints, &numCoords, &epsilon, &dataStr, &centersStr)) {
@@ -531,7 +480,6 @@ static PyObject *fit(PyObject *self, PyObject *args){
 
     iteration = 0;
     while (iteration < iter){
-        /*printf("iteration %d\n", iteration);*/
         new_centroids = centroidIteration(k, numCoords, centers, data_vec, numPoints);
         if (!new_centroids)
         {
@@ -542,7 +490,6 @@ static PyObject *fit(PyObject *self, PyObject *args){
         }
         if (calculateConvergence(centers, new_centroids, k, epsilon, numCoords))
         {
-            /* printf("Converged in iteration %d\n", iteration); */
             cleanupArrayOfVectors(centers, k);
             free(centers);
             break;
