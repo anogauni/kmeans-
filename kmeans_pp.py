@@ -94,7 +94,9 @@ if __name__ == "__main__":
             else:
                 print("An Error Has Occurred")
                 sys.exit(1)
+            
             epsilon = float(epsilon)
+            
             if epsilon < 0:
                 print("Invalid epsilon!")
                 sys.exit(1)

@@ -5,6 +5,7 @@
 #include <math.h>
 
 
+
 struct cord
 {
     double value;
@@ -301,12 +302,10 @@ double calculateDistance(struct vector *point1, struct vector *point2, int d)
 }
 
 /*Method that calculates convergence and returns 0 iff changes are under epsilon - > if 1 then we should continute iterating */
-int calculateConvergence(struct vector old_centroids[], struct vector new_centroids[], int k, double epsilon)
+int calculateConvergence(struct vector old_centroids[], struct vector new_centroids[], int k, double epsilon, int d)
 {
     struct vector *old_v;
     struct vector *new_v;
-    struct cord *old_c;
-    struct cord *new_c;
 
     int i;
     for (i = 0; i < k; i++)
@@ -315,18 +314,12 @@ int calculateConvergence(struct vector old_centroids[], struct vector new_centro
         old_v = &old_centroids[i];
         new_v = &new_centroids[i];
 
-        old_c = old_v->cords;
-        new_c = new_v->cords;
 
-        while (old_c != NULL && new_c != NULL)
+        if (calculateDistance(new_v, old_v, d) >= epsilon)
         {
-            if (fabs(old_c->value - new_c->value) >= epsilon)
-            {
-                return 0;
-            }
-            old_c = old_c->next;
-            new_c = new_c->next;
+            return 0;
         }
+        
     }
     return 1;
 }
@@ -517,10 +510,12 @@ static PyObject *fit(PyObject *self, PyObject *args){
 
 
     /* This parses the Python arguments*/
-    if(!PyArg_ParseTuple(args, "iiiidss", &k, &iter, &numPoints, &numCoords,&epsilon, &dataStr, &centersStr)) {
+    if(!PyArg_ParseTuple(args, "iiiidss", &k, &iter, &numPoints, &numCoords, &epsilon, &dataStr, &centersStr)) {
         return NULL; /* In the CPython API, a NULL value is never valid for a
                         PyObject* so it is used to signal that an error has occurred. */
     }    
+    
+ 
 
     readDataToLinkedList(dataStr, &data_vec);
     if (data_vec == NULL)
@@ -545,7 +540,7 @@ static PyObject *fit(PyObject *self, PyObject *args){
             cleanupVectorsList(data_vec);
             return NULL;
         }
-        if (calculateConvergence(centers, new_centroids, k, epsilon))
+        if (calculateConvergence(centers, new_centroids, k, epsilon, numCoords))
         {
             /* printf("Converged in iteration %d\n", iteration); */
             cleanupArrayOfVectors(centers, k);
